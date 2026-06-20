@@ -160,6 +160,24 @@ fun TopControlBar(
                         modifier = Modifier.size(18.dp)
                     )
                 }
+                Spacer(modifier = Modifier.width(6.dp))
+                val isCardEditMode by viewModel.isCardEditMode.collectAsState()
+                IconButton(
+                    onClick = { viewModel.toggleCardEditMode() },
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(
+                            if (isCardEditMode) Color(0xFF0F766E) else Color(0x33FFFFFF),
+                            CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = if (isCardEditMode) Icons.Default.EditNote else Icons.Default.Visibility,
+                        contentDescription = "Toggle View/Edit Mode",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }

@@ -65,6 +65,13 @@ class BrainViewModel(application: Application) : AndroidViewModel(application) {
     private val _connectionStartCardId = MutableStateFlow<Long?>(null)
     val connectionStartCardId: StateFlow<Long?> = _connectionStartCardId.asStateFlow()
 
+    private val _isCardEditMode = MutableStateFlow(true)
+    val isCardEditMode: StateFlow<Boolean> = _isCardEditMode.asStateFlow()
+
+    fun toggleCardEditMode() {
+        _isCardEditMode.value = !_isCardEditMode.value
+    }
+
     // Search query
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -252,7 +259,7 @@ class BrainViewModel(application: Application) : AndroidViewModel(application) {
         _selectedCardIds.value = emptySet()
     }
 
-    private fun addConnection(sourceId: Long, targetId: Long) {
+    fun addConnection(sourceId: Long, targetId: Long) {
         val wsId = _selectedWorkspaceId.value
         if (wsId == -1L) return
 

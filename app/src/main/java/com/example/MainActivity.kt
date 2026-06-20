@@ -95,6 +95,7 @@ fun MainCanvasScreen(viewModel: BrainViewModel) {
     val activeMode by viewModel.currentMode.collectAsState()
     val isConnectionMode by viewModel.isConnectionMode.collectAsState()
     val connectionStartCardId by viewModel.connectionStartCardId.collectAsState()
+    val isCardEditMode by viewModel.isCardEditMode.collectAsState()
 
     // Dialog state handlers
     var activeDialogCard by remember { mutableStateOf<CardEntity?>(null) }
@@ -149,6 +150,7 @@ fun MainCanvasScreen(viewModel: BrainViewModel) {
                             isSelected = isSelected,
                             isConnectionMode = isConnectionMode,
                             isConnectionStart = connectionStartCardId == card.id,
+                            isEditMode = isCardEditMode,
                             onTap = { viewModel.handleCardTap(card.id) },
                             onDrag = { newX, newY -> viewModel.updateCardPosition(card.id, newX, newY) },
                             onEdit = { activeDialogCard = card },
@@ -227,21 +229,24 @@ fun MainCanvasScreen(viewModel: BrainViewModel) {
                 }
             }
 
-            // Combined Unified Bottom Control Console (Eliminates overlaps completely!)
+            // Zoom Helper Control Pill (Aligned specifically to BottomStart)
             Surface(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp),
+                    .align(Alignment.BottomStart)
+                    .padding(start = 16.dp, bottom = 16.dp),
                 color = Color(0xE6111827), // Deep space slate glass background
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(20.dp),
                 border = BorderStroke(1.dp, Color(0x33FFFFFF))
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Zoom decrement
-                    IconButton(onClick = { viewModel.updateZoom(zoomScale - 0.1f) }) {
+                    IconButton(
+                        onClick = { viewModel.updateZoom(zoomScale - 0.1f) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         Text("-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                     // Zoom percent
@@ -254,11 +259,17 @@ fun MainCanvasScreen(viewModel: BrainViewModel) {
                         textAlign = TextAlign.Center
                     )
                     // Zoom increment
-                    IconButton(onClick = { viewModel.updateZoom(zoomScale + 0.1f) }) {
+                    IconButton(
+                        onClick = { viewModel.updateZoom(zoomScale + 0.1f) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                     // Reset zoom viewport
-                    IconButton(onClick = { viewModel.resetZoomPan() }) {
+                    IconButton(
+                        onClick = { viewModel.resetZoomPan() },
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Reset viewport",
@@ -266,26 +277,31 @@ fun MainCanvasScreen(viewModel: BrainViewModel) {
                             modifier = Modifier.size(13.dp)
                         )
                     }
+                }
+            }
 
-                    // Separation Divider
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 6.dp)
-                            .width(1.dp)
-                            .height(20.dp)
-                            .background(Color(0x33FFFFFF))
-                    )
-
-                    // Action controls
-                    IconButton(onClick = { activeDrawer = "STATS" }) {
+            // Quick Canvas Mode Action Buttons (Aligned specifically to BottomCenter)
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp),
+                color = Color(0xE6111827), // Deep space slate glass background
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, Color(0x33FFFFFF))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { activeDrawer = "STATS" }, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.QueryStats, contentDescription = "Stats", tint = Color.White, modifier = Modifier.size(18.dp))
                     }
                     Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(onClick = { activeDrawer = "KANBAN" }) {
+                    IconButton(onClick = { activeDrawer = "KANBAN" }, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.ViewKanban, contentDescription = "Kanban tasks", tint = Color.White, modifier = Modifier.size(18.dp))
                     }
                     Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(onClick = { viewModel.forceSync() }) {
+                    IconButton(onClick = { viewModel.forceSync() }, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.CloudSync, contentDescription = "Sync Cloud Status", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     }
                 }

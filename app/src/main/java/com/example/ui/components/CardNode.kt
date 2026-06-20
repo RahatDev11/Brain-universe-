@@ -5,18 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -69,6 +58,7 @@ fun CardNode(
     isSelected: Boolean,
     isConnectionMode: Boolean = false,
     isConnectionStart: Boolean = false,
+    isEditMode: Boolean = true,
     onTap: () -> Unit,
     onDrag: (Float, Float) -> Unit,
     onEdit: () -> Unit,
@@ -83,8 +73,7 @@ fun CardNode(
     Card(
         modifier = Modifier
             .offset { IntOffset(card.x.roundToInt(), card.y.roundToInt()) }
-            .width(card.width.dp)
-            .height(card.height.dp)
+            .widthIn(min = 60.dp, max = 260.dp)
             .rotate(card.rotation)
             .shadow(
                 elevation = if (isConnectionStart) 16.dp else if (isSelected) 12.dp else 4.dp,
@@ -101,7 +90,7 @@ fun CardNode(
                 shape = RoundedCornerShape(12.dp)
             )
             .pointerInput(card.id) {
-                if (!card.isLocked) {
+                if (!card.isLocked && isEditMode) {
                     detectDragGestures(
                         onDrag = { change, dragAmount ->
                             change.consume()
@@ -114,7 +103,7 @@ fun CardNode(
             }
             .combinedClickable(
                 onClick = onTap,
-                onDoubleClick = onEdit
+                onDoubleClick = { if (isEditMode) onEdit() }
             )
             .testTag("card_node_${card.id}"),
         colors = CardDefaults.cardColors(
@@ -123,92 +112,90 @@ fun CardNode(
         shape = RoundedCornerShape(12.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp)
+            modifier = Modifier.padding(10.dp)
         ) {
-            // Card Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+            if (isEditMode) {
+                // Card Header
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    if (card.showTitle) {
-                        val icon = when (card.type) {
-                            "AI" -> Icons.Outlined.GeneratingTokens
-                            "BOOKMARK" -> Icons.Outlined.Link
-                            "CHECKLIST" -> Icons.Outlined.CheckBox
-                            else -> Icons.Outlined.Notes
-                        }
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = card.type,
-                            tint = Color.White.copy(alpha = 0.8f),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = card.title,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            fontSize = 13.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    } else {
-                        // Tiny spacer indicator
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .background(Color.White.copy(alpha = 0.3f), CircleShape)
-                        )
-                    }
-                }
-
-                // Header Badges / Actions
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (card.isPinned) {
-                        Icon(
-                            imageVector = Icons.Default.PushPin,
-                            contentDescription = "Pinned",
-                            tint = Color(0xFFFFB300),
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-
-                    IconButton(
-                        onClick = onToggleLock,
-                        modifier = Modifier.size(24.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Icon(
-                            imageVector = if (card.isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                            contentDescription = "Lock",
-                            tint = Color.White.copy(alpha = 0.5f),
-                            modifier = Modifier.size(13.dp)
-                        )
+                        if (card.showTitle) {
+                            val icon = when (card.type) {
+                                "AI" -> Icons.Outlined.GeneratingTokens
+                                "BOOKMARK" -> Icons.Outlined.Link
+                                "CHECKLIST" -> Icons.Outlined.CheckBox
+                                else -> Icons.Outlined.Notes
+                            }
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = card.type,
+                                tint = Color.White.copy(alpha = 0.8f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = card.title,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        } else {
+                            // Tiny spacer indicator
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(Color.White.copy(alpha = 0.3f), CircleShape)
+                            )
+                        }
+                    }
+
+                    // Header Badges / Actions
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (card.isPinned) {
+                            Icon(
+                                imageVector = Icons.Default.PushPin,
+                                contentDescription = "Pinned",
+                                tint = Color(0xFFFFB300),
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                        }
+
+                        IconButton(
+                            onClick = onToggleLock,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (card.isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                                contentDescription = "Lock",
+                                tint = Color.White.copy(alpha = 0.5f),
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+            }
 
             // Card Content
             Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
                 if (card.showContent) {
                     if (card.type == "CHECKLIST") {
                         // Render Checklist
                         val items = parseChecklistContent(card.content)
                         Column(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             items.take(4).forEach { item ->
@@ -224,8 +211,10 @@ fun CardNode(
                                             .size(16.dp)
                                             .combinedClickable(
                                                 onClick = {
-                                                    val updatedList = toggleChecklistItem(items, item.text)
-                                                    onToggleChecklist(serializeChecklist(updatedList))
+                                                    if (isEditMode) {
+                                                        val updatedList = toggleChecklistItem(items, item.text)
+                                                        onToggleChecklist(serializeChecklist(updatedList))
+                                                    }
                                                 }
                                             )
                                     )
@@ -263,47 +252,51 @@ fun CardNode(
                 }
             }
 
-            // Quick hover actions in card footer
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = onStartConnection,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Link,
-                        contentDescription = "Link card",
-                        tint = if (isConnectionStart) Color(0xFFA855F7) else Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
+            if (isEditMode) {
+                Spacer(modifier = Modifier.height(6.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Quick hover actions in card footer
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(
-                        onClick = onEdit,
+                        onClick = onStartConnection,
                         modifier = Modifier.size(24.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit Card",
-                            tint = Color.White.copy(alpha = 0.6f),
-                            modifier = Modifier.size(13.dp)
+                            imageVector = Icons.Outlined.Link,
+                            contentDescription = "Link card",
+                            tint = if (isConnectionStart) Color(0xFFA855F7) else Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier.size(14.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Card",
-                            tint = Color(0xFFEF4444).copy(alpha = 0.8f),
-                            modifier = Modifier.size(13.dp)
-                        )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = onEdit,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Card",
+                                tint = Color.White.copy(alpha = 0.6f),
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(
+                            onClick = onDelete,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Card",
+                                tint = Color(0xFFEF4444).copy(alpha = 0.8f),
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
                     }
                 }
             }

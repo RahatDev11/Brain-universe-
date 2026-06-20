@@ -12,6 +12,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -201,6 +203,138 @@ fun EditCardDialog(
                             fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace
                         )
+                    }
+                }
+
+                // Link / Unlink Section (Inside Edit dialog)
+                Divider(color = Color(0x22FFFFFF))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Links & Connections",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                val workspaceCards by viewModel.workspaceCards.collectAsState()
+                val workspaceConnections by viewModel.workspaceConnections.collectAsState()
+
+                // 1. Existing Active Connections of this card
+                val currentCardConnections = workspaceConnections.filter {
+                    it.sourceCardId == card.id || it.targetCardId == card.id
+                }
+
+                if (currentCardConnections.isNotEmpty()) {
+                    Text("Current Links:", color = Color.LightGray, fontSize = 10.sp)
+                    currentCardConnections.forEach { conn ->
+                        val otherId = if (conn.sourceCardId == card.id) conn.targetCardId else conn.sourceCardId
+                        val otherCard = workspaceCards.find { it.id == otherId }
+                        if (otherCard != null) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0x11FFFFFF), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = otherCard.title.ifBlank { "Untitled Concept" },
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = { viewModel.deleteConnection(conn.id) },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Unlink",
+                                        tint = Color(0xFFEF4444),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Text("No active connections for this card", color = Color.Gray, fontSize = 10.sp)
+                }
+
+                // 2. Add New Link Options
+                val connectableCards = workspaceCards.filter { other ->
+                    other.id != card.id && currentCardConnections.none { conn ->
+                        conn.sourceCardId == other.id || conn.targetCardId == other.id
+                    }
+                }
+
+                if (connectableCards.isNotEmpty()) {
+                    var showDropdown by remember { mutableStateOf(false) }
+                    var selectedTargetCard by remember { mutableStateOf<CardEntity?>(null) }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            Button(
+                                onClick = { showDropdown = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0x22FFFFFF)),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = selectedTargetCard?.title?.ifBlank { "Select Target..." } ?: "Link card to...",
+                                    fontSize = 11.sp,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showDropdown,
+                                onDismissRequest = { showDropdown = false },
+                                modifier = Modifier.background(Color(0xFF1F2937))
+                            ) {
+                                connectableCards.forEach { other ->
+                                    DropdownMenuItem(
+                                        text = { Text(other.title.ifBlank { "Untitled Note" }, color = Color.White, fontSize = 12.sp) },
+                                        onClick = {
+                                            selectedTargetCard = other
+                                            showDropdown = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                selectedTargetCard?.let { target ->
+                                    viewModel.addConnection(card.id, target.id)
+                                    selectedTargetCard = null
+                                }
+                            },
+                            enabled = selectedTargetCard != null,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF3B82F6),
+                                disabledContainerColor = Color(0x333B82F6)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                        ) {
+                            Text("Link", fontSize = 11.sp, color = Color.White)
+                        }
                     }
                 }
 
