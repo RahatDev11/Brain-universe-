@@ -90,14 +90,26 @@ fun ConnectionsCanvas(
                         drawArrowHead(start, end, lineColor, conn.thickness)
                     }
                 } else {
-                    // Curved Bezier line
-                    val controlX = (start.x + end.x) / 2
-                    val controlY = ((start.y + end.y) / 2) - 120f
-                    val control = Offset(controlX, controlY)
+                    // Curved Bezier line - High-fidelity Cubic Bezier S-curve
+                    val dx = end.x - start.x
+                    val dy = end.y - start.y
+
+                    val control1: Offset
+                    val control2: Offset
+
+                    if (kotlin.math.abs(dx) > kotlin.math.abs(dy)) {
+                        // Horizontal dominance: S-curve horizontally
+                        control1 = Offset(start.x + dx * 0.5f, start.y)
+                        control2 = Offset(end.x - dx * 0.5f, end.y)
+                    } else {
+                        // Vertical dominance: S-curve vertically
+                        control1 = Offset(start.x, start.y + dy * 0.5f)
+                        control2 = Offset(end.x, end.y - dy * 0.5f)
+                    }
 
                     val path = Path().apply {
                         moveTo(start.x, start.y)
-                        quadraticTo(control.x, control.y, end.x, end.y)
+                        cubicTo(control1.x, control1.y, control2.x, control2.y, end.x, end.y)
                     }
 
                     drawPath(
@@ -108,8 +120,7 @@ fun ConnectionsCanvas(
 
                     // Draw arrow head on curved end
                     if (conn.lineStyle == "BIDIRECTIONAL" || conn.lineStyle == "CURVED") {
-                        val tangentStart = Offset((control.x + end.x) / 2, (control.y + end.y) / 2)
-                        drawArrowHead(tangentStart, end, lineColor, conn.thickness)
+                        drawArrowHead(control2, end, lineColor, conn.thickness)
                     }
                 }
             }
