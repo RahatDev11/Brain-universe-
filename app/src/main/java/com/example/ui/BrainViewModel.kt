@@ -186,7 +186,16 @@ class BrainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun updateCardDetails(cardId: Long, title: String, content: String, color: String, isLocked: Boolean, isPinned: Boolean) {
+    fun updateCardDetails(
+        cardId: Long,
+        title: String,
+        content: String,
+        color: String,
+        isLocked: Boolean,
+        isPinned: Boolean,
+        showTitle: Boolean = true,
+        showContent: Boolean = true
+    ) {
         viewModelScope.launch {
             val card = workspaceCards.value.find { it.id == cardId }
             if (card != null) {
@@ -195,7 +204,9 @@ class BrainViewModel(application: Application) : AndroidViewModel(application) {
                     content = content,
                     color = color,
                     isLocked = isLocked,
-                    isPinned = isPinned
+                    isPinned = isPinned,
+                    showTitle = showTitle,
+                    showContent = showContent
                 ))
                 triggerBackgroundCloudSync()
             }
@@ -206,6 +217,11 @@ class BrainViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleConnectionMode() {
         _isConnectionMode.value = !_isConnectionMode.value
         _connectionStartCardId.value = null
+    }
+
+    fun startConnectionFromCard(cardId: Long) {
+        _isConnectionMode.value = true
+        _connectionStartCardId.value = cardId
     }
 
     fun handleCardTap(cardId: Long) {

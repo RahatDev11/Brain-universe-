@@ -35,7 +35,9 @@ data class CardEntity(
     val isLocked: Boolean = false,
     val isPinned: Boolean = false,
     val coverUri: String? = null,
-    val iconName: String? = null
+    val iconName: String? = null,
+    val showTitle: Boolean = true,
+    val showContent: Boolean = true
 )
 
 @Entity(tableName = "connections")

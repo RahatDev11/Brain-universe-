@@ -39,6 +39,8 @@ fun EditCardDialog(
     var colorSelected by remember { mutableStateOf(card.color) }
     var isLocked by remember { mutableStateOf(card.isLocked) }
     var isPinned by remember { mutableStateOf(card.isPinned) }
+    var showTitle by remember { mutableStateOf(card.showTitle) }
+    var showContent by remember { mutableStateOf(card.showContent) }
 
     val aiLoading by viewModel.aiLoading.collectAsState()
     val aiResponse by viewModel.aiResponse.collectAsState()
@@ -141,6 +143,28 @@ fun EditCardDialog(
                     }
                 }
 
+                // Visibility states (Show Title, Show Content)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = showTitle,
+                            onCheckedChange = { showTitle = it }
+                        )
+                        Text("Show Title", color = Color.White, fontSize = 11.sp)
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = showContent,
+                            onCheckedChange = { showContent = it }
+                        )
+                        Text("Show Content", color = Color.White, fontSize = 11.sp)
+                    }
+                }
+
                 Divider(color = Color(0x11FFFFFF))
 
                 // AI Assist Action row inside the dialogue!
@@ -191,7 +215,16 @@ fun EditCardDialog(
                     }
                     Button(
                         onClick = {
-                            viewModel.updateCardDetails(card.id, title, content, colorSelected, isLocked, isPinned)
+                            viewModel.updateCardDetails(
+                                cardId = card.id,
+                                title = title,
+                                content = content,
+                                color = colorSelected,
+                                isLocked = isLocked,
+                                isPinned = isPinned,
+                                showTitle = showTitle,
+                                showContent = showContent
+                            )
                             onDismiss()
                         }
                     ) {
@@ -223,7 +256,7 @@ fun FloatingQuickAddPanel(
                 // Text node spawn
                 FloatingActionButton(
                     onClick = {
-                        viewModel.addNewCard(type = "TEXT", title = "New Concept", content = "Write concept explanation here...")
+                        viewModel.addNewCard(type = "TEXT", title = "", content = "")
                         isExpanded = false
                     },
                     containerColor = Color(0xFF312E81),
@@ -235,7 +268,7 @@ fun FloatingQuickAddPanel(
                 // Checklist task spawn
                 FloatingActionButton(
                     onClick = {
-                        viewModel.addNewCard(type = "CHECKLIST", title = "Action Items", content = "[ ] Task 1\n[ ] Task 2\n[ ] Task 3")
+                        viewModel.addNewCard(type = "CHECKLIST", title = "", content = "[ ] ")
                         isExpanded = false
                     },
                     containerColor = Color(0xFF064E3B),
@@ -247,7 +280,7 @@ fun FloatingQuickAddPanel(
                 // Link web reference spawn
                 FloatingActionButton(
                     onClick = {
-                        viewModel.addNewCard(type = "BOOKMARK", title = "Reference bookmark", content = "https://wikipedia.org/")
+                        viewModel.addNewCard(type = "BOOKMARK", title = "", content = "")
                         isExpanded = false
                     },
                     containerColor = Color(0xFF1E3A8A),

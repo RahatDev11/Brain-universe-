@@ -93,6 +93,8 @@ fun MainCanvasScreen(viewModel: BrainViewModel) {
     val panOffset by viewModel.panOffset.collectAsState()
     val selectedCardIds by viewModel.selectedCardIds.collectAsState()
     val activeMode by viewModel.currentMode.collectAsState()
+    val isConnectionMode by viewModel.isConnectionMode.collectAsState()
+    val connectionStartCardId by viewModel.connectionStartCardId.collectAsState()
 
     // Dialog state handlers
     var activeDialogCard by remember { mutableStateOf<CardEntity?>(null) }
@@ -145,22 +147,37 @@ fun MainCanvasScreen(viewModel: BrainViewModel) {
                         CardNode(
                             card = card,
                             isSelected = isSelected,
+                            isConnectionMode = isConnectionMode,
+                            isConnectionStart = connectionStartCardId == card.id,
                             onTap = { viewModel.handleCardTap(card.id) },
                             onDrag = { newX, newY -> viewModel.updateCardPosition(card.id, newX, newY) },
                             onEdit = { activeDialogCard = card },
                             onDelete = { viewModel.deleteCard(card.id) },
                             onToggleLock = {
                                 viewModel.updateCardDetails(
-                                    card.id, card.title, card.content, card.color,
-                                    !card.isLocked, card.isPinned
+                                    cardId = card.id,
+                                    title = card.title,
+                                    content = card.content,
+                                    color = card.color,
+                                    isLocked = !card.isLocked,
+                                    isPinned = card.isPinned,
+                                    showTitle = card.showTitle,
+                                    showContent = card.showContent
                                 )
                             },
                             onToggleChecklist = { updatedContent ->
                                 viewModel.updateCardDetails(
-                                    card.id, card.title, updatedContent, card.color,
-                                    card.isLocked, card.isPinned
+                                    cardId = card.id,
+                                    title = card.title,
+                                    content = updatedContent,
+                                    color = card.color,
+                                    isLocked = card.isLocked,
+                                    isPinned = card.isPinned,
+                                    showTitle = card.showTitle,
+                                    showContent = card.showContent
                                 )
-                            }
+                            },
+                            onStartConnection = { viewModel.startConnectionFromCard(card.id) }
                         )
                     }
                 }
@@ -210,63 +227,66 @@ fun MainCanvasScreen(viewModel: BrainViewModel) {
                 }
             }
 
-            // Zoom helper controls on bottom left
+            // Combined Unified Bottom Control Console (Eliminates overlaps completely!)
             Surface(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp),
-                color = Color(0x99111827),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, Color(0x22FFFFFF))
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp),
+                color = Color(0xE6111827), // Deep space slate glass background
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, Color(0x33FFFFFF))
             ) {
                 Row(
-                    modifier = Modifier.padding(4.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Zoom decrement
                     IconButton(onClick = { viewModel.updateZoom(zoomScale - 0.1f) }) {
                         Text("-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
+                    // Zoom percent
                     Text(
                         text = "${(zoomScale * 100).roundToInt()}%",
                         color = Color.White,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.width(42.dp),
+                        modifier = Modifier.width(36.dp),
                         textAlign = TextAlign.Center
                     )
+                    // Zoom increment
                     IconButton(onClick = { viewModel.updateZoom(zoomScale + 0.1f) }) {
-                        Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                    // Reset zoom viewport
+                    IconButton(onClick = { viewModel.resetZoomPan() }) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Reset viewport",
+                            tint = Color.LightGray,
+                            modifier = Modifier.size(13.dp)
+                        )
+                    }
+
+                    // Separation Divider
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 6.dp)
+                            .width(1.dp)
+                            .height(20.dp)
+                            .background(Color(0x33FFFFFF))
+                    )
+
+                    // Action controls
+                    IconButton(onClick = { activeDrawer = "STATS" }) {
+                        Icon(Icons.Default.QueryStats, contentDescription = "Stats", tint = Color.White, modifier = Modifier.size(18.dp))
                     }
                     Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(onClick = { viewModel.resetZoomPan() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Reset viewport", tint = Color.LightGray, modifier = Modifier.size(16.dp))
-                    }
-                }
-            }
-
-            // Quick Canvas Mode Action Buttons on bottom center
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp),
-                color = Color(0x99111827),
-                shape = RoundedCornerShape(20.dp),
-                border = BorderStroke(1.dp, Color(0x22FFFFFF))
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { activeDrawer = "STATS" }) {
-                        Icon(Icons.Default.QueryStats, contentDescription = "Stats", tint = Color.White)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
                     IconButton(onClick = { activeDrawer = "KANBAN" }) {
-                        Icon(Icons.Default.ViewKanban, contentDescription = "Kanban tasks", tint = Color.White)
+                        Icon(Icons.Default.ViewKanban, contentDescription = "Kanban tasks", tint = Color.White, modifier = Modifier.size(18.dp))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     IconButton(onClick = { viewModel.forceSync() }) {
-                        Icon(Icons.Default.CloudSync, contentDescription = "Sync Cloud Status", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Default.CloudSync, contentDescription = "Sync Cloud Status", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     }
                 }
             }
