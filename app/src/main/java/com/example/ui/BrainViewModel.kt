@@ -121,10 +121,11 @@ class BrainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setMode(mode: String) {
         _currentMode.value = mode
-        if (mode == "MIND_MAP") {
-            autoLayoutMindMap()
-        } else if (mode == "GRAPH") {
-            autoLayoutForceDirectedGraph()
+        when (mode) {
+            "MIND_MAP" -> autoLayoutMindMap()
+            "GRAPH" -> autoLayoutForceDirectedGraph()
+            "TREE" -> autoLayoutTree()
+            "LIST" -> autoLayoutListColumns()
         }
     }
 
@@ -427,14 +428,22 @@ class BrainViewModel(application: Application) : AndroidViewModel(application) {
     fun autoLayoutMindMap() {
         val cards = workspaceCards.value
         if (cards.isEmpty()) return
-        Log.d(TAG, "Triggering Mind Map hierarchical layout")
+        Log.d(TAG, "Triggering Mind Map grid-based layout")
         viewModelScope.launch {
-            // Place central card, spread others vertically/horizontally
-            val startX = 200f
-            var currentY = 150f
+            // Place elegantly with a 3-column structured grid to prevent any overlaps
+            val startX = 150f
+            val currentY = 150f
             cards.sortedBy { it.id }.forEachIndexed { index, card ->
-                repository.updateCard(card.copy(x = startX + (index % 3) * 260f, y = currentY + (index / 3) * 200f))
+                val col = index % 3
+                val row = index / 3
+                repository.updateCard(
+                    card.copy(
+                        x = startX + col * 340f,
+                        y = currentY + row * 240f
+                    )
+                )
             }
+            triggerBackgroundCloudSync()
         }
     }
 
@@ -443,18 +452,131 @@ class BrainViewModel(application: Application) : AndroidViewModel(application) {
         val connections = workspaceConnections.value
         if (cards.isEmpty()) return
         Log.d(TAG, "Triggering force-directed layout")
-        // Basic physics simulation (simplistic for instant Compose placement)
         viewModelScope.launch {
             val numCards = cards.size
             val centerX = 600f
             val centerY = 500f
             cards.forEachIndexed { i, card ->
                 val angle = (2 * Math.PI * i / numCards).toFloat()
-                val radius = 250f + (Math.random() * 80).toFloat()
+                val radius = 280f + (Math.random() * 60).toFloat()
                 val targetX = centerX + (radius * Math.cos(angle.toDouble())).toFloat()
                 val targetY = centerY + (radius * Math.sin(angle.toDouble())).toFloat()
                 repository.updateCard(card.copy(x = targetX, y = targetY))
             }
+            triggerBackgroundCloudSync()
+        }
+    }
+
+    fun autoLayoutTree() {
+        val cards = workspaceCards.value
+        val connections = workspaceConnections.value
+        if (cards.isEmpty()) return
+        Log.d(TAG, "Triggering Hierarchical Connections Tree Layout")
+        viewModelScope.launch {
+            // Build adjacency list & incoming count
+            val childrenMap = mutableMapOf<Long, MutableList<Long>>()
+            val parentCount = mutableMapOf<Long, Int>()
+
+            cards.forEach { card ->
+                childrenMap[card.id] = mutableListOf()
+                parentCount[card.id] = 0
+            }
+
+            connections.forEach { conn ->
+                if (childrenMap.containsKey(conn.sourceCardId) && childrenMap.containsKey(conn.targetCardId)) {
+                    childrenMap[conn.sourceCardId]?.add(conn.targetCardId)
+                    parentCount[conn.targetCardId] = (parentCount[conn.targetCardId] ?: 0) + 1
+                }
+            }
+
+            // Find root nodes (no inbound connections)
+            val roots = cards.filter { (parentCount[it.id] ?: 0) == 0 }
+            val finalRoots = if (roots.isEmpty()) listOf(cards.first()) else roots
+
+            // Calculate level of each node using BFS
+            val nodeLevels = mutableMapOf<Long, Int>()
+            val queue = java.util.ArrayDeque<Pair<Long, Int>>()
+
+            finalRoots.forEach { root ->
+                queue.add(Pair(root.id, 0))
+                nodeLevels[root.id] = 0
+            }
+
+            while (queue.isNotEmpty()) {
+                val pair = queue.poll() ?: continue
+                val currId = pair.first
+                val level = pair.second
+                val maxLevel = nodeLevels[currId] ?: level
+                childrenMap[currId]?.forEach { childId ->
+                    val childLevel = maxLevel + 1
+                    val prevLevel = nodeLevels[childId] ?: -1
+                    if (childLevel > prevLevel) {
+                        nodeLevels[childId] = childLevel
+                        queue.add(Pair(childId, childLevel))
+                    }
+                }
+            }
+
+            // Fallback for disconnected nodes
+            cards.forEach { card ->
+                if (!nodeLevels.containsKey(card.id)) {
+                    nodeLevels[card.id] = 0
+                }
+            }
+
+            // Group by level and render
+            val levelNodes = nodeLevels.entries.groupBy({ it.value }, { it.key })
+
+            levelNodes.forEach { (level, cardIds) ->
+                val startX = 150f + level * 340f
+                cardIds.forEachIndexed { index, cardId ->
+                    val card = cards.find { it.id == cardId }
+                    if (card != null) {
+                        val startY = 150f + index * 240f
+                        repository.updateCard(card.copy(x = startX, y = startY))
+                    }
+                }
+            }
+            triggerBackgroundCloudSync()
+        }
+    }
+
+    fun autoLayoutListColumns() {
+        val cards = workspaceCards.value
+        if (cards.isEmpty()) return
+        Log.d(TAG, "Triggering List Columns layout (nested list type)")
+        viewModelScope.launch {
+            // Group cards by type to form cohesive visual vertical columns/lists
+            val grouped = cards.groupBy { it.type }
+            val types = listOf("TEXT", "CHECKLIST", "BOOKMARK", "AI")
+
+            var colIndex = 0
+            types.forEach { type ->
+                val cardsInType = grouped[type] ?: emptyList()
+                if (cardsInType.isNotEmpty()) {
+                    val startX = 150f + colIndex * 340f
+                    cardsInType.sortedBy { it.id }.forEachIndexed { index, card ->
+                        val startY = 150f + index * 240f
+                        repository.updateCard(card.copy(x = startX, y = startY))
+                    }
+                    colIndex++
+                }
+            }
+
+            // Non-standard types if there are any
+            val remainingTypes = grouped.keys.filter { it !in types }
+            remainingTypes.forEach { type ->
+                val cardsInType = grouped[type] ?: emptyList()
+                if (cardsInType.isNotEmpty()) {
+                    val startX = 150f + colIndex * 340f
+                    cardsInType.sortedBy { it.id }.forEachIndexed { index, card ->
+                        val startY = 150f + index * 240f
+                        repository.updateCard(card.copy(x = startX, y = startY))
+                    }
+                    colIndex++
+                }
+            }
+            triggerBackgroundCloudSync()
         }
     }
 

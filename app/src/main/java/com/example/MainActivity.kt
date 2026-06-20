@@ -10,6 +10,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -204,19 +206,32 @@ fun MainCanvasScreen(viewModel: BrainViewModel) {
                         onOpenKanban = { activeDrawer = "KANBAN" }
                     )
 
-                    // Quick Canvas Mode Pill Selector
+                    // Quick Canvas Mode Pill Selector (Scrollable)
                     Row(
                         modifier = Modifier
                             .padding(horizontal = 20.dp)
                             .background(Color(0x99111827), RoundedCornerShape(20.dp))
                             .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(20.dp))
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                            .horizontalScroll(rememberScrollState()),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         ModeSelectPill(
                             label = "Sandbox",
                             isActive = activeMode == "CANVAS",
                             onClick = { viewModel.setMode("CANVAS") }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        ModeSelectPill(
+                            label = "Tree Preview",
+                            isActive = activeMode == "TREE",
+                            onClick = { viewModel.setMode("TREE") }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        ModeSelectPill(
+                            label = "List Board",
+                            isActive = activeMode == "LIST",
+                            onClick = { viewModel.setMode("LIST") }
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         ModeSelectPill(
