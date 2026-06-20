@@ -21,12 +21,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.QueryStats
@@ -186,132 +189,194 @@ fun MainCanvasScreen(viewModel: BrainViewModel) {
             }
 
             // FLOATING OVERLAY MENUS & PANELS
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.TopCenter)
-            ) {
-                // Top Search & Command Deck
-                TopControlBar(
-                    viewModel = viewModel,
-                    onOpenWorkspaces = { activeDrawer = "WORKSPACES" },
-                    onOpenAI = { activeDrawer = "AI" },
-                    onOpenStats = { activeDrawer = "STATS" },
-                    onOpenKanban = { activeDrawer = "KANBAN" }
-                )
-
-                // Quick Canvas Mode Pill Selector
-                Row(
+            if (isCardEditMode) {
+                Column(
                     modifier = Modifier
-                        .padding(horizontal = 20.dp)
-                        .background(Color(0x99111827), RoundedCornerShape(20.dp))
-                        .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
                 ) {
-                    ModeSelectPill(
-                        label = "Sandbox",
-                        isActive = activeMode == "CANVAS",
-                        onClick = { viewModel.setMode("CANVAS") }
+                    // Top Search & Command Deck
+                    TopControlBar(
+                        viewModel = viewModel,
+                        onOpenWorkspaces = { activeDrawer = "WORKSPACES" },
+                        onOpenAI = { activeDrawer = "AI" },
+                        onOpenStats = { activeDrawer = "STATS" },
+                        onOpenKanban = { activeDrawer = "KANBAN" }
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    ModeSelectPill(
-                        label = "Mind Map",
-                        isActive = activeMode == "MIND_MAP",
-                        onClick = { viewModel.setMode("MIND_MAP") }
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    ModeSelectPill(
-                        label = "Graph Net",
-                        isActive = activeMode == "GRAPH",
-                        onClick = { viewModel.setMode("GRAPH") }
-                    )
-                }
-            }
 
-            // Zoom Helper Control Pill (Aligned specifically to BottomStart)
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 16.dp, bottom = 16.dp),
-                color = Color(0xE6111827), // Deep space slate glass background
-                shape = RoundedCornerShape(20.dp),
-                border = BorderStroke(1.dp, Color(0x33FFFFFF))
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Zoom decrement
-                    IconButton(
-                        onClick = { viewModel.updateZoom(zoomScale - 0.1f) },
-                        modifier = Modifier.size(32.dp)
+                    // Quick Canvas Mode Pill Selector
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp)
+                            .background(Color(0x99111827), RoundedCornerShape(20.dp))
+                            .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    }
-                    // Zoom percent
-                    Text(
-                        text = "${(zoomScale * 100).roundToInt()}%",
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.width(36.dp),
-                        textAlign = TextAlign.Center
-                    )
-                    // Zoom increment
-                    IconButton(
-                        onClick = { viewModel.updateZoom(zoomScale + 0.1f) },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    }
-                    // Reset zoom viewport
-                    IconButton(
-                        onClick = { viewModel.resetZoomPan() },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Reset viewport",
-                            tint = Color.LightGray,
-                            modifier = Modifier.size(13.dp)
+                        ModeSelectPill(
+                            label = "Sandbox",
+                            isActive = activeMode == "CANVAS",
+                            onClick = { viewModel.setMode("CANVAS") }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        ModeSelectPill(
+                            label = "Mind Map",
+                            isActive = activeMode == "MIND_MAP",
+                            onClick = { viewModel.setMode("MIND_MAP") }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        ModeSelectPill(
+                            label = "Graph Net",
+                            isActive = activeMode == "GRAPH",
+                            onClick = { viewModel.setMode("GRAPH") }
                         )
                     }
                 }
             }
 
-            // Quick Canvas Mode Action Buttons (Aligned specifically to BottomCenter)
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp),
-                color = Color(0xE6111827), // Deep space slate glass background
-                shape = RoundedCornerShape(20.dp),
-                border = BorderStroke(1.dp, Color(0x33FFFFFF))
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            // Zoom Helper Control Pill (Aligned specifically to BottomStart)
+            if (isCardEditMode) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 16.dp, bottom = 16.dp),
+                    color = Color(0xE6111827), // Deep space slate glass background
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, Color(0x33FFFFFF))
                 ) {
-                    IconButton(onClick = { activeDrawer = "STATS" }, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Default.QueryStats, contentDescription = "Stats", tint = Color.White, modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(onClick = { activeDrawer = "KANBAN" }, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Default.ViewKanban, contentDescription = "Kanban tasks", tint = Color.White, modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(onClick = { viewModel.forceSync() }, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Default.CloudSync, contentDescription = "Sync Cloud Status", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Zoom decrement
+                        IconButton(
+                            onClick = { viewModel.updateZoom(zoomScale - 0.1f) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Text("-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                        // Zoom percent
+                        Text(
+                            text = "${(zoomScale * 100).roundToInt()}%",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.width(36.dp),
+                            textAlign = TextAlign.Center
+                        )
+                        // Zoom increment
+                        IconButton(
+                            onClick = { viewModel.updateZoom(zoomScale + 0.1f) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+                        // Reset zoom viewport
+                        IconButton(
+                            onClick = { viewModel.resetZoomPan() },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Reset viewport",
+                                tint = Color.LightGray,
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
                     }
                 }
             }
 
-            // Speed Dial Plus Selector on Bottom Right
-            FloatingQuickAddPanel(
-                viewModel = viewModel,
-                modifier = Modifier.align(Alignment.BottomEnd)
-            )
+            // Quick Canvas Mode Action Buttons (Aligned specifically to BottomCenter)
+            if (isCardEditMode) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp),
+                    color = Color(0xE6111827), // Deep space slate glass background
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, Color(0x33FFFFFF))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { activeDrawer = "STATS" }, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Default.QueryStats, contentDescription = "Stats", tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(onClick = { activeDrawer = "KANBAN" }, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Default.ViewKanban, contentDescription = "Kanban tasks", tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(onClick = { viewModel.forceSync() }, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Default.CloudSync, contentDescription = "Sync Cloud Status", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 6.dp)
+                                .width(1.dp)
+                                .height(20.dp)
+                                .background(Color(0x33FFFFFF))
+                        )
+
+                        Button(
+                            onClick = { viewModel.toggleCardEditMode() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Save Changes",
+                                tint = Color.White,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Save", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            } else {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
+                        .clickable { viewModel.toggleCardEditMode() },
+                    color = Color(0xFF0F766E),
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, Color(0x33FFFFFF))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Board",
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Edit Board",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // Speed Dial Plus Selector on Bottom Right (Only in Edit Mode)
+            if (isCardEditMode) {
+                FloatingQuickAddPanel(
+                    viewModel = viewModel,
+                    modifier = Modifier.align(Alignment.BottomEnd)
+                )
+            }
 
             // DYNAMIC BOTTOM DRAWER SHEETS
             when (activeDrawer) {

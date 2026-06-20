@@ -65,7 +65,7 @@ class BrainViewModel(application: Application) : AndroidViewModel(application) {
     private val _connectionStartCardId = MutableStateFlow<Long?>(null)
     val connectionStartCardId: StateFlow<Long?> = _connectionStartCardId.asStateFlow()
 
-    private val _isCardEditMode = MutableStateFlow(true)
+    private val _isCardEditMode = MutableStateFlow(false)
     val isCardEditMode: StateFlow<Boolean> = _isCardEditMode.asStateFlow()
 
     fun toggleCardEditMode() {
