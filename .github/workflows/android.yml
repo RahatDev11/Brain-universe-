@@ -35,6 +35,17 @@ jobs:
             chmod +x gradlew
           fi
 
+      - name: Restore Debug Keystore
+        run: |
+          if [ -f debug.keystore.base64 ]; then
+            echo "Decoding debug.keystore.base64..."
+            base64 --decode debug.keystore.base64 > debug.keystore || base64 -d debug.keystore.base64 > debug.keystore
+          else
+            echo "No debug.keystore.base64 found. Creating a generic debug keystore..."
+            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          touch .env
+
       - name: Build Debug APK
         run: |
           if [ -f gradlew ]; then
